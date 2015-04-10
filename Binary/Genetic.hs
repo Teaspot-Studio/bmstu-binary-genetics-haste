@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies, DeriveGeneric #-}
-module Radio.Genetic where
+module Binary.Genetic where
 
 import Data.List
 import Control.Applicative
@@ -19,8 +19,8 @@ import Genetic.Individ
 import Genetic.State 
 import Genetic.Population 
 
-import Radio.Task 
-import Radio.Tower 
+import Binary.Task 
+import Binary.Tower 
 
 type Field = [[Int]]
 

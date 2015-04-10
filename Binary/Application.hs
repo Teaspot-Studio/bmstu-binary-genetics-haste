@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Radio.Application where
+module Binary.Application where
 
 import Prelude hiding (div)
 import Data.Monoid
@@ -9,13 +9,13 @@ import Control.Monad.IO.Class
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Applicative
-import Radio.Field
-import Radio.Task
-import Radio.Util
-import Radio.Genetic
-import Radio.Plot
-import Radio.Config
-import Radio.Tower
+import Binary.Field
+import Binary.Task
+import Binary.Util
+import Binary.Genetic
+import Binary.Plot
+import Binary.Config
+import Binary.Tower
 import System.Random
 import Haste.HPlay.View hiding (head)
 import Haste

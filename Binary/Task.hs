@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
-module Radio.Task where
+module Binary.Task where
 
-import Radio.Tower 
+import Binary.Tower 
 import Haste.Serialize
 import Haste.JSON
 import Data.Typeable

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Radio.Util(
+module Binary.Util(
     getElementPosition
   , styleBlock
   , getMousePosition

@@ -3,10 +3,10 @@ module Main where
 import Haste
 import Haste.HPlay.View hiding (head)
 
-import Radio.Application
+import Binary.Application
 import Control.Monad.IO.Class
 import Prelude hiding (div)
-import Radio.Util
+import Binary.Util
 
 main :: IO (Maybe ())
 main = do

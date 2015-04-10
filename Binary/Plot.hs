@@ -1,4 +1,4 @@
-module Radio.Plot where
+module Binary.Plot where
 
 import Haste.Graphics.Canvas
 import Haste.Perch hiding (head)
@@ -11,7 +11,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Arrow
 import Control.Applicative
 
-import Radio.Task
+import Binary.Task
 import Debug.Trace 
 
 plotWidget :: PlotState -> String -> String -> (Double, Double) -> Widget ()

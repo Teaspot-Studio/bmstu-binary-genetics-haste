@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Radio.Config where
+module Binary.Config where
 
 import Prelude hiding (id, div)
 import Haste hiding (style)
@@ -9,9 +9,9 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Monoid
 
 import Genetic.Options
-import Radio.Field
-import Radio.Task 
-import Radio.Util
+import Binary.Field
+import Binary.Task 
+import Binary.Util
 
 fieldConfigWidget :: Input -> Widget Input
 fieldConfigWidget input = do
