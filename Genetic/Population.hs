@@ -2,6 +2,7 @@ module Genetic.Population where
 
 import Data.Function
 import Data.List
+import Data.Maybe
 import Control.Applicative
 import Control.Arrow
 import Control.Monad.Random
@@ -12,15 +13,20 @@ import Genetic.Individ
 import Genetic.Options
 
 type Population a = [a]
-type Fitness a = a -> Float 
+type Fitness a = a -> Double 
 
 -- | Fetching best solution from populations      
-findBest :: Individ a => Fitness a -> [Population a] -> (Float, a)
-findBest fitness pops = maximumBy (compare `on` fst) $ findPopBest fitness <$> pops
+findBest :: Individ a => Fitness a -> [Population a] -> Maybe (Double, a)
+findBest fitness pops = case catMaybes $ (findPopBest fitness) <$> pops of
+  [] -> Nothing
+  bests -> Just $ maximumBy (compare `on` fst) bests
+  
 
 -- | Fetching best solution from population
-findPopBest :: Individ a => Fitness a -> Population a -> (Float, a)
-findPopBest fitness pop = maximumBy (compare `on` fst) $ first fitness <$> zip pop pop
+findPopBest :: Individ a => Fitness a -> Population a -> Maybe (Double, a)
+findPopBest fitness pop 
+  | null pop = Nothing
+  | otherwise = Just $ maximumBy (compare `on` fst) $ first fitness <$> zip pop pop
 
 -- | Creating population with m chromosomes with length n
 initPopulation :: Individ a => IndividOptions a -> Int -> PauseableRand (Population a)
@@ -34,7 +40,7 @@ randChoice chance th els = join (fromList [(th, chance), (els, 1 - chance)])
 nextPopulation :: Individ a => IndividOptions a -> Fitness a -> GeneticOptions -> Population a -> PauseableRand (Population a)
 nextPopulation iopts fitness opts pop = do
   newPop' <- liftM concat $ forM [1 .. ceiling $ fromIntegral nonEliteCount / 2] $ \i -> do
-    when (i `mod` 10 == 0) pause
+    when (i `mod` 25 == 0) pause
     a1 <- takeChr
     b1 <- takeChr
     (a2, b2) <- crossover iopts a1 b1

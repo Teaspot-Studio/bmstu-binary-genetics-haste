@@ -10,12 +10,13 @@ import Data.List
 import Control.Monad.IO.Class (liftIO)
 import Control.Arrow
 import Control.Applicative
+import Control.Monad
 
 import Binary.Task
 import Debug.Trace 
 
-plotWidget :: PlotState -> String -> String -> (Double, Double) -> Widget ()
-plotWidget state xstr ystr (xsize, ysize) = do 
+plotWidget :: PlotState -> [ ([(Double, Double)], Color) ] -> String -> String -> (Double, Double) -> Int -> Int -> [(Double, Double, Color)] -> Widget ()
+plotWidget state secondaryPlots xstr ystr (xsize, ysize) xdigs ydigs dots = do 
   canvasId <- fmap ("canvas" ++) getNextId
   resetEventData
   wraw $ do 
@@ -30,22 +31,25 @@ plotWidget state xstr ystr (xsize, ysize) = do
       Nothing -> return ()
       Just can -> render can $
         translate (margin*xsize, margin*ysize) $ 
-        plot xstr ystr points (xsize, ysize)
+        plot xstr ystr ((points, red):secondaryPlots) (xsize, ysize) xdigs ydigs dots
   where
-    points = second toDouble . first fromIntegral <$> values state
+    points = values state
     margin = 0.1
+    red = RGB 200 0 0
 
-    toDouble :: Float -> Double 
-    toDouble = fromRational . toRational
-
-plot :: String -> String -> [(Double, Double)] -> (Double, Double) -> Picture ()
-plot xstr ystr pts (xs, ys) = coords >> xlabel >> ylabel >> grid >> plotted
+plot :: String -> String -> [ ([(Double, Double)], Color) ] -> (Double, Double) -> Int -> Int -> [(Double, Double, Color)] -> Picture ()
+plot xstr ystr ptss (xs, ys) xdigs ydigs mdots = coords >> xlabel >> ylabel >> grid >> plotted >> dots
   where
+    pts = fst $ head ptss
+    ptsCol = snd $ head ptss
+    secPts = tail ptss
     coords = xcoord >> ycoord
     xcoord = stroke (line (0, ys) (xs, ys)) >> translate (xs, ys) xarrow
     ycoord = stroke (line (0, ys) (0, 0)) >> translate (0, 0) yarrow
     xarrow = stroke $ path [(-0.025*xs, 0.01*ys), (0, 0), (-0.025*xs, -0.01*ys)]
     yarrow = rotate (-pi/2) xarrow
+    dots = mapM_ dot mdots
+    dot (x, y, c) = color c $ fill $ circle (toLocal (x,y)) (0.005*xs)
 
     xmin = fst $ minimumBy (compare `on` fst) pts
     xmax = fst $ maximumBy (compare `on` fst) pts
@@ -62,12 +66,15 @@ plot xstr ystr pts (xs, ys) = coords >> xlabel >> ylabel >> grid >> plotted
     fromLocalY y = ymin + ((1 - y / ys) - ymargin) * yrange / (1 - 2*ymargin)   
 
     localPts = toLocal <$> pts
-    intervals 
-      | null localPts = [] 
-      | length localPts == 1 = [(head localPts, head localPts)] 
-      | otherwise = localPts `zip` tail localPts
-    plotted = color red $ sequence_ $ stroke . uncurry line <$> intervals
-    red = RGB 200 0 0
+    localSecPts = first (fmap toLocal) <$> secPts
+    intervals ps
+      | null ps = [] 
+      | length ps == 1 = [(head ps, head ps)] 
+      | otherwise = ps `zip` tail ps
+    plotted = do
+      color ptsCol $ sequence_ $ stroke . uncurry line <$> intervals localPts
+      forM localSecPts $ \ps ->
+        color (snd ps) $ sequence_ $ stroke . uncurry line <$> intervals (fst ps)
 
     ltexscale = 2.0 * xs / 900
     xlabel = translate (0.8*xs, 0.95*ys) $ scale (ltexscale, ltexscale) $ text (0,0) xstr
@@ -86,8 +93,8 @@ plot xstr ystr pts (xs, ys) = coords >> xlabel >> ylabel >> grid >> plotted
     truncText n d =  if v == "-0." ++ replicate n '0' then "0." ++ replicate n '0' else v
       where v = printf ("%."++show n++"f") d
 
-    xgrid = sequence_ $ (\x -> stroke (line (x,0) (x,ys)) >> translate (x - (textOffsetX x)*0.005*xs, 1.05*ys) (smalltext 0 $ fromLocalX x)) . fst <$> gridPts
-    ygrid = sequence_ $ (\y -> stroke (line (0,y) (xs,y)) >> translate (  - (textOffsetY y)*0.022*xs, y+0.015*ys) (smalltext 2 $ fromLocalY y)) . snd <$> gridPts
+    xgrid = sequence_ $ (\x -> stroke (line (x,0) (x,ys)) >> translate (x - (textOffsetX x)*0.005*xs, 1.05*ys) (smalltext xdigs $ fromLocalX x)) . fst <$> gridPts
+    ygrid = sequence_ $ (\y -> stroke (line (0,y) (xs,y)) >> translate (  - (textOffsetY y)*0.022*xs, y+0.015*ys) (smalltext ydigs $ fromLocalY y)) . snd <$> gridPts
     textOffsetX n = min 4 $ (fromIntegral $ length (truncText 0 $ fromLocalX n) - 1)
     textOffsetY n = min 4 $ (fromIntegral $ length (truncText 2 $ fromLocalY n) - 1)
 
@@ -98,10 +105,10 @@ takeUniform n l
   | n > length l = error "n is larger than passed list!"
   | otherwise = take n $ every step l 
   where
-    step = round $ (fromIntegral (length l) :: Float) / fromIntegral n
+    step = round $ (fromIntegral (length l) :: Double) / fromIntegral n
     every k xs = case drop (k-1) xs of
               (y:ys) -> y : every k ys
               [] -> []
 
-sample :: Float -> Float -> Int -> (Float -> Float) -> [(Float, Float)]
-sample xmin xmax i f = (\x -> (x, f x)) <$> ((\j -> xmin + (xmax - xmin) * fromIntegral j / fromIntegral i) <$> [0 .. i - 1])               
+sample :: Double -> Double -> Int -> (Double -> Double) -> [(Double, Double)]
+sample xmin xmax i f = (\x -> (x, f x)) <$> ((\j -> xmin + (xmax - xmin) * fromIntegral j / fromIntegral i) <$> [0 .. i])               

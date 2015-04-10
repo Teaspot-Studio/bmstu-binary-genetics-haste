@@ -7,65 +7,69 @@ import Haste.Perch hiding (head)
 import Haste.HPlay.View hiding (head)
 import Control.Monad.IO.Class (liftIO)
 import Data.Monoid
+import Data.Maybe
 
 import Genetic.Options
-import Binary.Field
 import Binary.Task 
 import Binary.Util
 
 fieldConfigWidget :: Input -> Widget Input
 fieldConfigWidget input = do
   --writeLog $ show $ inputTowers input
-  (dwidth, _) <- liftIO $ getDocumentSize
-  let (xsize, ysize) = inputFieldSize input
-      cellSize = fromIntegral dwidth * 0.4 / fromIntegral xsize
+  --(dwidth, _) <- liftIO $ getDocumentSize
   div ! atr "class" "row vertical-align" <<<
     (   ((div ! atr "class" "col-md-1" $ noHtml) ++>
-        (div ! atr "class" "col-md-5" <<< editingCntl))
-    <|> div ! atr "class" "col-md-6" <<< field cellSize)
+        (div ! atr "class" "col-md-11" <<< editingCntl)))
   where
-    
-    field = fieldConfig input 
-
     bsrow = div ! atr "class" "row"
+    bsrowFluid = div ! atr "class" "row-fluid"
 
     editingCntl :: Widget Input
-    editingCntl = bsrow <<<
+    editingCntl = bsrowFluid <<<
           (fieldOptionsCnt <|> evolOptionsCnt <|> fitnessCntl) 
       where
-        fieldOptionsCnt = (bsrow $ label ("Настройки поля: " :: JSString) ! atr "style" "font-size: 20px") ++>
-          (bsrow <<< (radiusCntl <|> fieldWidthCntl <|> fieldHeightCntl))
+        fieldOptionsCnt = (bsrow $ label ("Настройки функции: " :: JSString) ! atr "style" "font-size: 20px") ++>
+          (bsrow <<< (digitsCountCnt <|> digitsPreDotCountCnt <|> expectedCnt))
 
-    makeCounter :: Int -> JSString -> JSString -> Widget Int
-    makeCounter initial labelStr errmsg = bsrow <<< 
+    makeCounter' :: Int -> JSString -> (Int -> Maybe String) -> Widget Int
+    makeCounter' initial labelStr validation = bsrow <<< 
       ((div ! atr "class" "col-md-6" $ label (labelStr :: JSString)) ++>
        (div ! atr "class" "col-md-6" <<< (incBtn <|> f <|> decBtn)) ) 
-      `validate` (\r -> return $ if r > 0 then Nothing else Just $ b (errmsg :: JSString))  
+      `validate` (\r -> return $ if isNothing $ validation r then Nothing else Just $ b (toJSString $ fromJust $ validation r))
       where
         f = inputInt (Just initial) ! atr "size" "2" `fire` OnKeyUp
         incBtn = cbutton (initial + 1) "+" `fire` OnClick
         decBtn = cbutton (initial - 1) "-" `fire` OnClick
 
-    radiusCntl :: Widget Input
-    radiusCntl = do
-      newRadius <- makeCounter (inputRadius input) "Радиус: " "радиус должен быть положителен"
+    makeCounter :: Int -> JSString -> String -> Widget Int
+    makeCounter initial labelStr errmsg = makeCounter' initial labelStr validate
+      where validate r = if r > 0 then Nothing else Just errmsg
+
+    digitsCountCnt :: Widget Input
+    digitsCountCnt = do
+      newVal <- makeCounter (inputDigitsCount input) "Число битов: " "число битов должно быть положительно"
       return $ input {
-        inputRadius = newRadius
+        inputDigitsCount = newVal
       }
 
-    fieldWidthCntl :: Widget Input 
-    fieldWidthCntl = do
-      newWidth <- makeCounter (fst $ inputFieldSize input) "Ширина поля: " "ширина должна быть положительна"
+    digitsPreDotCountCnt :: Widget Input 
+    digitsPreDotCountCnt = do
+      newVal <- makeCounter' (inputDigitsPrevDot input) "Число битов до запятой: " 
+        (\r -> if r > 0 && r <= inputDigitsCount input then Nothing else Just "должно >= 0 и <= общего числа битов") 
       return $ input {
-        inputFieldSize = (newWidth, snd $ inputFieldSize input)
+        inputDigitsPrevDot = newVal
       } 
 
-    fieldHeightCntl :: Widget Input 
-    fieldHeightCntl = do
-      newHeight <- makeCounter (snd $ inputFieldSize input) "Высота поля: " "высота должна быть положительна"
+    expectedCnt :: Widget Input 
+    expectedCnt = do
+      newVal <- bsrow ! atr "style" "margin-top:10px" <<< 
+        ((div ! atr "class" "col-md-6" $ label ("Ожидаемое значение:" :: JSString)) ++>
+         (div ! atr "class" "col-md-6" <<< f)) 
+         <** (bsrow . (div ! atr "class" "col-md-6") <<< inputSubmit "Обновить" `fire` OnClick)
       return $ input {
-        inputFieldSize = (fst $ inputFieldSize input, newHeight)
+        inputExpected = newVal
       } 
+      where f = inputDouble (Just $ inputExpected input)
 
     fitnessCntl :: Widget Input
     fitnessCntl = do
@@ -74,14 +78,7 @@ fieldConfigWidget input = do
         (bsrow <<< textArea (inputFitness input) ! atr "rows" "6" ! atr "cols" "60" <++ br 
           <** (inputSubmit "Обновить" `fire` OnClick <! [atr "style" "margin-bottom: 40px"])) <++
         (bsrow $ panel "Пояснения к параметрам:" $ mconcat [
-            labelRow 2 "coverage:" "число с плавающей запятой, процент клеток поля, покрытых хотя бы одной вышкой"
-          , labelRow 2 "usedCount:" "целочисленное, количество использованных башен"
-          , labelRow 2 "towerUsedGetter:" "функция, берующая индекс башни и возвращающая использованную башню в виде объекта {int towerX, int towerY, int towerRadius}, максимальный индекс usedCount-1, минимальный индекс 0"
-          , labelRow 2 "totalCount:" "целочисленное, количество башен на поле (включая неиспользованные в данном решении)"
-          , labelRow 2 "towerTotalGetter:" "функция, берующая индекс башни (любая на поле) и возвращающая башню в виде объекта {int towerX, int towerY, int towerRadius}, максимальный индекс totalCount-1, минимальный индекс 0"
-          , labelRow 2 "fieldWidth:" "целочисленное, ширина поля"
-          , labelRow 2 "fieldHieght:" "целочисленное, высота поля"
-          , labelRow 2 "fieldGetter:" "функция, берущая два индекса (x и y), соответствующие ячейке поля (x может принимать значения от 0 до fieldWidth-1, y может принимать значения от 0 до fieldHieght-1). Возвращает количество башен, покрывающих данную ячейку (x,y)"
+            labelRow 2 "x:" "число с плавающей запятой, аргумент функции"
           ]))
       return $ input {
         inputFitness = newFitness
@@ -99,20 +96,20 @@ fieldConfigWidget input = do
         options = inputGeneticOptions input
 
         evolOptionsCnt' :: Widget GeneticOptions 
-        evolOptionsCnt' = GeneticOptions <$> mutChanceCnt <*> elitePartCnt <*> maxGenCnt <*> popCountCnt <*> indCountCnt <*> pure Nothing
-          <** inputSubmit "Обновить" `fire` OnClick
+        evolOptionsCnt' = GeneticOptions <$> mutChanceCnt <*> elitePartCnt <*> maxGenCnt <*> popCountCnt <*> indCountCnt <*> targetFitnessCnt
+          <** (inputSubmit "Обновить" `fire` OnClick)
 
-        mutChanceCnt :: Widget Float
+        mutChanceCnt :: Widget Double
         mutChanceCnt = bsrow <<< (
           (div ! atr "class" "col-md-6" $ label ("Шанс мутации: " :: JSString)) ++>
-          (div ! atr "class" "col-md-6" <<< inputFloat (Just $ mutationChance options)
+          (div ! atr "class" "col-md-6" <<< inputDouble (Just $ mutationChance options)
           `validate`
           (\c -> return $ if c >= 0.0 && c <= 1.0 then Nothing else Just $ b ("вероятность некорректна [0, 1]" :: JSString))))
 
-        elitePartCnt :: Widget Float
+        elitePartCnt :: Widget Double
         elitePartCnt = bsrow <<< (
           (div ! atr "class" "col-md-6" $ label ("Часть элиты: " :: JSString)) ++>
-          (div ! atr "class" "col-md-6" <<< inputFloat (Just $ elitePart options)
+          (div ! atr "class" "col-md-6" <<< inputDouble (Just $ elitePart options)
           `validate`
           (\c -> return $ if c >= 0.0 && c <= 1.0 then Nothing else Just $ b ("доля некорректна [0, 1]" :: JSString))))
 
@@ -136,3 +133,8 @@ fieldConfigWidget input = do
          (div ! atr "class" "col-md-6" <<< inputInt (Just $ indCount options)
          `validate`
          (\c -> return $ if c > 0 then Nothing else Just $ b ("должно быть положительно" :: JSString))))
+
+        targetFitnessCnt :: Widget (Maybe Double)
+        targetFitnessCnt = return . Just =<< bsrow <<< (
+          (div ! atr "class" "col-md-6" $ label ("Ожидаемый фитнес: " :: JSString)) ++>
+          (div ! atr "class" "col-md-6" <<< inputDouble (targetFitness options)))

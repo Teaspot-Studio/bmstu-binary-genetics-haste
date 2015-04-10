@@ -8,7 +8,7 @@ data GeneticState a = GeneticState {
   geneticFinished :: Bool,
   geneticCurrentGen :: Int,
   geneticPopulations :: [Population a],
-  geneticCurrentBest :: Maybe (Float, a),
+  geneticCurrentBest :: Maybe (Double, a),
   geneticGen :: HasteGen
 }
 

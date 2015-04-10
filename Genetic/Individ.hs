@@ -8,7 +8,7 @@ import Control.DeepSeq
 
 import Genetic.Coroutine
 
-class NFData a => Individ a where
+class (Show a, NFData a) => Individ a where
   type IndividOptions a :: *
   crossover :: IndividOptions a -> a -> a -> PauseableRand (a, a)
   mutation :: IndividOptions a -> a -> PauseableRand a

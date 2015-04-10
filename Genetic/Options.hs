@@ -8,12 +8,12 @@ import Data.Maybe
 import Control.Applicative
 
 data GeneticOptions = GeneticOptions {
-  mutationChance :: Float,
-  elitePart :: Float,
+  mutationChance :: Double,
+  elitePart :: Double,
   maxGeneration :: Int,
   popCount :: Int,
   indCount :: Int,
-  targetFitness :: Maybe Float
+  targetFitness :: Maybe Double
 } deriving (Typeable, Show)
 
 instance Serialize GeneticOptions where
@@ -39,8 +39,8 @@ initialOptions :: GeneticOptions
 initialOptions = GeneticOptions {
     mutationChance = 0.3,
     elitePart = 0.1,
-    maxGeneration = 25,
+    maxGeneration = 100,
     popCount = 2,
-    indCount = 10,
-    targetFitness = Nothing
+    indCount = 20,
+    targetFitness = Just $ 10^10
   }
