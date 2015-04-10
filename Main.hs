@@ -5,7 +5,7 @@ import Haste.HPlay.View hiding (head)
 
 import Binary.Application
 import Control.Monad.IO.Class
-import Prelude hiding (div)
+import Prelude hiding (div, id)
 import Binary.Util
 
 main :: IO (Maybe ())
@@ -16,7 +16,7 @@ main = do
   addJs  "https://code.jquery.com/jquery-1.11.2.min.js"
   addJs  "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"
   embedJs myJs
-  runBody $ div ! atr "class" ".container" <<< timeout 1000 (runApplication initialState)
+  runBody $ at "main-content" Insert $ timeout 1000 (runApplication initialState)
 
 addCss :: String -> IO ()
 addCss s = addHeader $ 

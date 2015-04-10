@@ -37,7 +37,7 @@ instance Serialize GeneticOptions where
 
 initialOptions :: GeneticOptions
 initialOptions = GeneticOptions {
-    mutationChance = 0.3,
+    mutationChance = 0.8,
     elitePart = 0.1,
     maxGeneration = 100,
     popCount = 2,

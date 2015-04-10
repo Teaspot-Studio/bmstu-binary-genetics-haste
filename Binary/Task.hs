@@ -34,7 +34,7 @@ instance Serialize Input where
 initialInput :: Input
 initialInput = Input {
     inputDigitsPrevDot = 3,
-    inputDigitsCount = 10,
+    inputDigitsCount = 40,
     inputExpected = 3,
     inputFitness = "function(x)\n{\n    return x*Math.sin(x);\n}",
     inputGeneticOptions = initialOptions

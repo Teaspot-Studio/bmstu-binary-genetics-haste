@@ -74,7 +74,7 @@ fieldConfigWidget input = do
     fitnessCntl :: Widget Input
     fitnessCntl = do
       newFitness <- bsrow <<< (
-        (bsrow $ label ("Фитнес функция: " :: JSString) ! atr "style" "margin-top: 40px; font-size: 20px") ++>
+        (bsrow $ label ("Функция для апроксимации: " :: JSString) ! atr "style" "margin-top: 40px; font-size: 20px") ++>
         (bsrow <<< textArea (inputFitness input) ! atr "rows" "6" ! atr "cols" "60" <++ br 
           <** (inputSubmit "Обновить" `fire` OnClick <! [atr "style" "margin-bottom: 40px"])) <++
         (bsrow $ panel "Пояснения к параметрам:" $ mconcat [

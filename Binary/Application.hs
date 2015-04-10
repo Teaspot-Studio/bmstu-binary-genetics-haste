@@ -159,6 +159,7 @@ showResultsWidget input plotState output = do
       ]
 
     otherInfo = panel "Другая информация" $ mconcat [
+        labelRow 6 "Ошибка решения: " $ show $ 1.0 / outputFitness output
       ]
 
 resultPlot :: Input -> Int -> Int -> Maybe Double -> Widget ()
