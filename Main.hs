@@ -10,11 +10,11 @@ import Binary.Util
 
 main :: IO (Maybe ())
 main = do
-  addCss "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"
-  addCss "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css"
+  addCss "./bootstrap.min.css"
+  addCss "./bootstrap-theme.min.css"
   embedCss myCss
-  addJs  "https://code.jquery.com/jquery-1.11.2.min.js"
-  addJs  "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"
+  addJs  "./jquery-1.11.2.min.js"
+  addJs  "./bootstrap.min.js"
   embedJs myJs
   runBody $ at "main-content" Insert $ timeout 1000 (runApplication initialState)
 
